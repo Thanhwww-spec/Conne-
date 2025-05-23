@@ -84,7 +84,7 @@
         }
         table {
             width: 100%;
-            min-width: 500px; /* Đảm bảo bảng cuộn ngang trên mobile */
+            min-width: 500px;
             border-collapse: collapse;
             background: #fff;
             border-radius: 8px;
@@ -112,8 +112,6 @@
             color: #e74c3c;
             font-weight: bold;
         }
-
-        /* Responsive cho mobile */
         @media (max-width: 600px) {
             .container {
                 padding: 10px;
@@ -200,27 +198,59 @@
     </div>
 
     <script>
-        // JavaScript để xử lý form và bảng
+        // Hàm tải dữ liệu từ localStorage
+        function loadServices() {
+            const services = JSON.parse(localStorage.getItem('services')) || [];
+            const tableBody = document.getElementById('serviceList');
+            tableBody.innerHTML = ''; // Xóa bảng trước khi tải lại
+
+            services.forEach(service => {
+                const newRow = tableBody.insertRow();
+                newRow.innerHTML = `
+                    <td>${service.customerName}</td>
+                    <td>${service.carModel}</td>
+                    <td>${service.serviceType}</td>
+                    <td class="price">${Number(service.price).toLocaleString('vi-VN')}</td>
+                    <td>${service.status}</td>
+                `;
+            });
+        }
+
+        // Hàm lưu dữ liệu vào localStorage
+        function saveService(service) {
+            const services = JSON.parse(localStorage.getItem('services')) || [];
+            services.push(service);
+            localStorage.setItem('services', JSON.stringify(services));
+        }
+
+        // Tải dữ liệu khi trang được load
+        document.addEventListener('DOMContentLoaded', loadServices);
+
+        // Xử lý form khi submit
         document.getElementById('serviceForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
             // Lấy giá trị từ form
-            const customerName = document.getElementById('customerName').value;
-            const carModel = document.getElementById('carModel').value;
-            const serviceType = document.getElementById('serviceType').value;
-            const price = document.getElementById('price').value;
-            const status = document.getElementById('status').value;
+            const service = {
+                customerName: document.getElementById('customerName').value,
+                carModel: document.getElementById('carModel').value,
+                serviceType: document.getElementById('serviceType').value,
+                price: document.getElementById('price').value,
+                status: document.getElementById('status').value
+            };
 
-            // Tạo hàng mới trong bảng
+            // Lưu vào localStorage
+            saveService(service);
+
+            // Thêm hàng mới vào bảng
             const table = document.getElementById('serviceList');
             const newRow = table.insertRow();
-
             newRow.innerHTML = `
-                <td>${customerName}</td>
-                <td>${carModel}</td>
-                <td>${serviceType}</td>
-                <td class="price">${Number(price).toLocaleString('vi-VN')}</td>
-                <td>${status}</td>
+                <td>${service.customerName}</td>
+                <td>${service.carModel}</td>
+                <td>${service.serviceType}</td>
+                <td class="price">${Number(service.price).toLocaleString('vi-VN')}</td>
+                <td>${service.status}</td>
             `;
 
             // Reset form
