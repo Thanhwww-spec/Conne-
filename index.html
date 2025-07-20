@@ -3,345 +3,315 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Sửa Máy Lạnh Ô Tô</title>
+    <title>Quản Lý Sửa Chữa Máy Lạnh Ôtô</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            background: linear-gradient(135deg, #a8edea, #fed6e3);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            background-color: #f8f9fa;
         }
-        .container {
-            width: 95%;
-            max-width: 400px;
-            background: #fff;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-            margin: 10px;
-            border: 2px solid #3498db;
-        }
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-            font-size: 1.6em;
-            margin: 10px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 5px;
-        }
-        h3 {
-            color: #2c3e50;
-            font-size: 1.1em;
-            margin: 10px 0;
-            border-left: 4px solid #e74c3c;
-            padding-left: 8px;
-        }
-        .form-group {
-            background: linear-gradient(135deg, #ffecd2, #fcb69f);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #f1c40f;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #2c3e50;
+        .navbar-brand {
             font-weight: bold;
-            font-size: 0.9em;
         }
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #bdc3c7;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            font-size: 1em;
-            background: #fff;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-            box-sizing: border-box;
-        }
-        input:focus, select:focus {
-            border-color: #e74c3c;
-            box-shadow: 0 0 8px rgba(231, 76, 60, 0.3);
-            outline: none;
-        }
-        /* Tùy chỉnh dropdown */
-        select {
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            background: linear-gradient(45deg, #ecf0f1, #ffffff);
-            padding-right: 35px;
-            cursor: pointer;
-        }
-        .select-wrapper {
-            position: relative;
-        }
-        .select-wrapper::after {
-            content: '▼';
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #e74c3c;
-            font-size: 0.9em;
-            pointer-events: none;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: transform 0.2s, background 0.3s, box-shadow 0.3s;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
-        button:hover {
-            background: linear-gradient(45deg, #c0392b, #e74c3c);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-        .clear-btn {
-            background: linear-gradient(45deg, #7f8c8d, #95a5a6);
-            margin-top: 10px;
-        }
-        .clear-btn:hover {
-            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
-        }
-        /* Bảng dạng thẻ trên mobile */
-        .service-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        .table-container {
             margin-top: 20px;
         }
-        .service-card {
-            background: #fff;
-            border: 1px solid #3498db;
-            border-radius: 8px;
-            padding: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        .modal-header {
+            background-color: #007bff;
+            color: white;
         }
-        .service-card p {
-            margin: 5px 0;
-            font-size: 0.9em;
-            color: #2c3e50;
-        }
-        .service-card .price {
-            color: #e74c3c;
-            font-weight: bold;
-        }
-        /* Ẩn bảng trên mobile, chỉ hiển thị trên desktop */
-        .table-container {
-            display: none;
-        }
-        @media (min-width: 600px) {
-            .container {
-                max-width: 600px;
-            }
-            .service-list {
-                display: none;
-            }
-            .table-container {
-                display: block;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            table {
-                width: 100%;
-                min-width: 500px;
-                border-collapse: collapse;
-                background: #fff;
-                border-radius: 8px;
-                border: 1px solid #3498db;
-            }
-            th, td {
-                padding: 8px;
-                text-align: left;
-                border-bottom: 1px solid #ddd;
-                font-size: 0.85em;
-            }
-            th {
-                background: linear-gradient(45deg, #3498db, #2980b9);
-                color: white;
-                text-transform: uppercase;
-            }
-            tr:nth-child(even) {
-                background-color: #f8f9fa;
-            }
-            tr:hover {
-                background-color: #ecf0f1;
-                transition: background-color 0.3s;
-            }
-        }
-        @media (max-width: 600px) {
-            .container {
-                padding: 10px;
-                margin: 5px;
-            }
-            h1 {
-                font-size: 1.4em;
-            }
-            h3 {
-                font-size: 1em;
-            }
-            label {
-                font-size: 0.85em;
-            }
-            input, select {
-                padding: 10px;
-                font-size: 0.9em;
-            }
-            button {
-                padding: 10px;
-                font-size: 0.9em;
-            }
+        .search-container {
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Quản Lý Sửa Máy Lạnh Ô Tô</h1>
-
-        <!-- Form thêm mới thông tin -->
-        <div class="form-group">
-            <h3>Thêm Dịch Vụ Mới</h3>
-            <form id="serviceForm">
-                <label for="customerName">Tên Khách Hàng:</label>
-                <input type="text" id="customerName" required>
-
-                <label for="carModel">Mẫu Xe:</label>
-                <input type="text" id="carModel" required>
-
-                <label for="serviceType">Loại Dịch Vụ:</label>
-                <div class="select-wrapper">
-                    <select id="serviceType" required>
-                        <option value="Kiểm tra máy lạnh">Kiểm tra máy lạnh</option>
-                        <option value="Nạp gas">Nạp gas</option>
-                        <option value="Sửa chữa hệ thống">Sửa chữa hệ thống</option>
-                        <option value="Vệ sinh dàn lạnh">Vệ sinh dàn lạnh</option>
-                    </select>
-                </div>
-
-                <label for="price">Giá Tiền (VNĐ):</label>
-                <input type="number" id="price" min="0" required>
-
-                <label for="status">Trạng Thái:</label>
-                <div class="select-wrapper">
-                    <select id="status" required>
-                        <option value="Chờ xử lý">Chờ xử lý</option>
-                        <option value="Đang sửa">Đang sửa</option>
-                        <option value="Hoàn thành">Hoàn thành</option>
-                    </select>
-                </div>
-
-                <button type="submit">Thêm Dịch Vụ</button>
-            </form>
-            <button class="clear-btn" onclick="clearServices()">Xóa Tất Cả Dịch Vụ</button>
+    <!-- Menu điều hướng -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Quản Lý Sửa Chữa Máy Lạnh Ôtô</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">Trang Chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#addRepairModal">Thêm Sửa Chữa</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="exportData()">Xuất Dữ Liệu</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="document.getElementById('importFile').click()">Nhập Dữ Liệu</a>
+                        <input type="file" id="importFile" style="display: none;" accept=".json">
+                    </li>
+                </ul>
+            </div>
         </div>
+    </nav>
 
-        <!-- Danh sách dịch vụ dạng thẻ (mobile) -->
-        <h3>Danh Sách Dịch Vụ</h3>
-        <div class="service-list" id="serviceList"></div>
+    <!-- Nội dung chính -->
+    <div class="container table-container">
+        <h2 class="text-center my-4">Danh Sách Sửa Chữa Máy Lạnh Ôtô</h2>
+        <!-- Tìm kiếm -->
+        <div class="search-container">
+            <div class="input-group mb-3">
+                <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm theo Biển Số Xe hoặc Loại Xe">
+                <button class="btn btn-primary" onclick="searchRepairs()">Tìm Kiếm</button>
+                <button class="btn btn-success ms-2" onclick="filterWarranty()">Lọc Cần Bảo Hành</button>
+                <button class="btn btn-secondary ms-2" onclick="resetSearch()">Hiển Thị Tất Cả</button>
+            </div>
+        </div>
+        <!-- Bảng dữ liệu -->
+        <table class="table table-bordered table-striped">
+            <thead class="table-primary">
+                <tr>
+                    <th>Biển Số Xe</th>
+                    <th>Loại Xe</th>
+                    <th>Ngày Sửa Chữa</th>
+                    <th>Nội Dung</th>
+                    <th>Thời Gian Bảo Hành</th>
+                    <th>Trạng Thái Bảo Hành</th>
+                    <th>Hành Động</th>
+                </tr>
+            </thead>
+            <tbody id="repairTableBody">
+                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+            </tbody>
+        </table>
+    </div>
 
-        <!-- Danh sách dịch vụ dạng bảng (desktop) -->
-        <div class="table-container">
-            <table id="serviceTable">
-                <thead>
-                    <tr>
-                        <th>Tên Khách Hàng</th>
-                        <th>Mẫu Xe</th>
-                        <th>Loại Dịch Vụ</th>
-                        <th>Giá Tiền (VNĐ)</th>
-                        <th>Trạng Thái</th>
-                    </tr>
-                </thead>
-                <tbody id="serviceTableBody"></tbody>
-            </table>
+    <!-- Modal thêm sửa chữa -->
+    <div class="modal fade" id="addRepairModal" tabindex="-1" aria-labelledby="addRepairModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addRepairModalLabel">Thêm Sửa Chữa Mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addRepairForm">
+                        <div class="mb-3">
+                            <label for="licensePlate" class="form-label">Biển Số Xe</label>
+                            <input type="text" class="form-control" id="licensePlate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="carType" class="form-label">Loại Xe</label>
+                            <input type="text" class="form-control" id="carType" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="repairDate" class="form-label">Ngày Sửa Chữa</label>
+                            <input type="date" class="form-control" id="repairDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Nội Dung</label>
+                            <textarea class="form-control" id="content" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="warrantyPeriod" class="form-label">Thời Gian Bảo Hành</label>
+                            <select class="form-select" id="warrantyPeriod" required>
+                                <option value="6 tháng">6 tháng</option>
+                                <option value="12 tháng">12 tháng</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Thêm</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Bootstrap JS và JavaScript tùy chỉnh -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Hàm tải dữ liệu từ localStorage
-        function loadServices() {
-            const services = JSON.parse(localStorage.getItem('services')) || [];
-            const tableBody = document.getElementById('serviceTableBody');
-            const serviceList = document.getElementById('serviceList');
-            tableBody.innerHTML = '';
-            serviceList.innerHTML = '';
+        // Tính trạng thái bảo hành
+        function checkWarrantyStatus(repairDate, warrantyPeriod) {
+            const repairDateObj = new Date(repairDate);
+            const currentDate = new Date();
+            const warrantyMonths = warrantyPeriod === '6 tháng' ? 6 : 12;
+            const warrantyEndDate = new Date(repairDateObj.setMonth(repairDateObj.getMonth() + warrantyMonths));
+            return warrantyEndDate >= currentDate ? 'Còn bảo hành' : 'Hết bảo hành';
+        }
 
-            services.forEach(service => {
-                // Thêm vào bảng (desktop)
-                const newRow = tableBody.insertRow();
-                newRow.innerHTML = `
-                    <td>${service.customerName}</td>
-                    <td>${service.carModel}</td>
-                    <td>${service.serviceType}</td>
-                    <td class="price">${Number(service.price).toLocaleString('vi-VN')}</td>
-                    <td>${service.status}</td>
+        // Tải dữ liệu từ localStorage
+        function loadRepairs(filter = null) {
+            const repairs = JSON.parse(localStorage.getItem('repairs')) || [];
+            const tableBody = document.getElementById('repairTableBody');
+            tableBody.innerHTML = '';
+            let filteredRepairs = repairs;
+
+            if (filter === 'warranty') {
+                filteredRepairs = repairs.filter(repair => checkWarrantyStatus(repair.repairDate, repair.warrantyPeriod) === 'Còn bảo hành');
+            } else if (filter) {
+                const searchTerm = filter.toLowerCase();
+                filteredRepairs = repairs.filter(repair => 
+                    repair.licensePlate.toLowerCase().includes(searchTerm) || 
+                    repair.carType.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            filteredRepairs.forEach((repair, index) => {
+                const row = document.createElement('tr');
+                const warrantyStatus = checkWarrantyStatus(repair.repairDate, repair.warrantyPeriod);
+                row.innerHTML = `
+                    <td>${repair.licensePlate}</td>
+                    <td>${repair.carType}</td>
+                    <td>${repair.repairDate}</td>
+                    <td>${repair.content}</td>
+                    <td>${repair.warrantyPeriod}</td>
+                    <td>${warrantyStatus}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="editRepair(${index})">Sửa</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteRepair(${index})">Xóa</button>
+                    </td>
                 `;
-                // Thêm vào danh sách thẻ (mobile)
-                const card = document.createElement('div');
-                card.className = 'service-card';
-                card.innerHTML = `
-                    <p><strong>Tên:</strong> ${service.customerName}</p>
-                    <p><strong>Xe:</strong> ${service.carModel}</p>
-                    <p><strong>Dịch vụ:</strong> ${service.serviceType}</p>
-                    <p><strong>Giá:</strong> <span class="price">${Number(service.price).toLocaleString('vi-VN')}</span></p>
-                    <p><strong>Trạng thái:</strong> ${service.status}</p>
-                `;
-                serviceList.appendChild(card);
+                tableBody.appendChild(row);
             });
         }
 
-        // Hàm lưu dữ liệu vào localStorage
-        function saveService(service) {
-            const services = JSON.parse(localStorage.getItem('services')) || [];
-            services.push(service);
-            localStorage.setItem('services', JSON.stringify(services));
+        // Lưu dữ liệu vào localStorage
+        function saveRepairs(repairs) {
+            try {
+                localStorage.setItem('repairs', JSON.stringify(repairs));
+            } catch (e) {
+                console.error('Lỗi khi lưu vào localStorage:', e);
+                alert('Không thể lưu dữ liệu. Vui lòng kiểm tra bộ nhớ thiết bị.');
+            }
         }
 
-        // Hàm xóa tất cả dữ liệu
-        function clearServices() {
-            localStorage.removeItem('services');
-            loadServices();
-        }
-
-        // Tải dữ liệu khi trang được load
-        document.addEventListener('DOMContentLoaded', loadServices);
-
-        // Xử lý form khi submit
-        document.getElementById('serviceForm').addEventListener('submit', function(e) {
+        // Thêm sửa chữa mới
+        document.getElementById('addRepairForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            const form = document.getElementById('addRepairForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
 
-            // Lấy giá trị từ form
-            const service = {
-                customerName: document.getElementById('customerName').value,
-                carModel: document.getElementById('carModel').value,
-                serviceType: document.getElementById('serviceType').value,
-                price: document.getElementById('price').value,
-                status: document.getElementById('status').value
+            const repair = {
+                licensePlate: document.getElementById('licensePlate').value.trim(),
+                carType: document.getElementById('carType').value.trim(),
+                repairDate: document.getElementById('repairDate').value,
+                content: document.getElementById('content').value.trim(),
+                warrantyPeriod: document.getElementById('warrantyPeriod').value
             };
 
-            // Lưu vào localStorage
-            saveService(service);
+            const repairs = JSON.parse(localStorage.getItem('repairs')) || [];
+            if (repairs.some(r => r.licensePlate === repair.licensePlate)) {
+                alert('Biển số xe đã tồn tại. Vui lòng nhập biển số khác.');
+                return;
+            }
 
-            // Tải lại danh sách
-            loadServices();
-
-            // Reset form
-            document.getElementById('serviceForm').reset();
+            repairs.push(repair);
+            saveRepairs(repairs);
+            loadRepairs();
+            
+            bootstrap.Modal.getInstance(document.getElementById('addRepairModal')).hide();
+            form.reset();
         });
+
+        // Sửa thông tin sửa chữa
+        function editRepair(index) {
+            const repairs = JSON.parse(localStorage.getItem('repairs')) || [];
+            const repair = repairs[index];
+            if (confirm('Bạn muốn sửa thông tin này?')) {
+                const newLicensePlate = prompt('Biển Số Xe:', repair.licensePlate);
+                if (newLicensePlate && repairs.some((r, i) => i !== index && r.licensePlate === newLicensePlate.trim())) {
+                    alert('Biển số xe đã tồn tại. Vui lòng nhập biển số khác.');
+                    return;
+                }
+                
+                repairs[index] = {
+                    licensePlate: newLicensePlate ? newLicensePlate.trim() : repair.licensePlate,
+                    carType: prompt('Loại Xe:', repair.carType) || repair.carType,
+                    repairDate: prompt('Ngày Sửa Chữa:', repair.repairDate) || repair.repairDate,
+                    content: prompt('Nội Dung:', repair.content) || repair.content,
+                    warrantyPeriod: prompt('Thời Gian Bảo Hành (6 tháng hoặc 12 tháng):', repair.warrantyPeriod) || repair.warrantyPeriod
+                };
+                saveRepairs(repairs);
+                loadRepairs();
+            }
+        }
+
+        // Xóa thông tin sửa chữa
+        function deleteRepair(index) {
+            if (confirm('Bạn có chắc muốn xóa?')) {
+                const repairs = JSON.parse(localStorage.getItem('repairs')) || [];
+                repairs.splice(index, 1);
+                saveRepairs(repairs);
+                loadRepairs();
+            }
+        }
+
+        // Tìm kiếm
+        function searchRepairs() {
+            const searchTerm = document.getElementById('searchInput').value;
+            loadRepairs(searchTerm);
+        }
+
+        // Lọc bản ghi cần bảo hành
+        function filterWarranty() {
+            loadRepairs('warranty');
+        }
+
+        // Hiển thị tất cả bản ghi
+        function resetSearch() {
+            document.getElementById('searchInput').value = '';
+            loadRepairs();
+        }
+
+        // Xuất dữ liệu ra tệp JSON
+        function exportData() {
+            const repairs = JSON.parse(localStorage.getItem('repairs')) || [];
+            if (repairs.length === 0) {
+                alert('Không có dữ liệu để xuất.');
+                return;
+            }
+            const dataStr = JSON.stringify(repairs, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'suachua_maylanh_oto.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            alert('Dữ liệu đã được xuất. Vui lòng chọn thư mục để lưu tệp trên điện thoại.');
+        }
+
+        // Nhập dữ liệu từ tệp JSON
+        document.getElementById('importFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (!Array.isArray(importedData)) {
+                        throw new Error('Tệp không đúng định dạng.');
+                    }
+                    const repairs = JSON.parse(localStorage.getItem('repairs')) || [];
+                    const newRepairs = importedData.filter(newRepair => 
+                        !repairs.some(existingRepair => existingRepair.licensePlate === newRepair.licensePlate)
+                    );
+                    repairs.push(...newRepairs);
+                    saveRepairs(repairs);
+                    loadRepairs();
+                    alert('Nhập dữ liệu thành công.');
+                } catch (error) {
+                    alert('Lỗi khi nhập dữ liệu: ' + error.message);
+                }
+                e.target.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        // Tải dữ liệu khi trang được mở
+        window.onload = loadRepairs;
     </script>
 </body>
 </html>
