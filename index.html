@@ -1,336 +1,79 @@
-<!DOCTYPE html>
-<html lang="vi">
+<!DOCTYPE html><html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Sửa Chữa Máy Lạnh Ôtô</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"></script>
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .navbar-brand {
-            font-weight: bold;
-        }
-        .table-container {
-            margin-top: 20px;
-        }
-        .modal-header {
-            background-color: #007bff;
-            color: white;
-        }
-        .search-container {
-            margin-bottom: 20px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Auto AC Repair Manager</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+    h1 { color: #333; }
+    form { margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; }
+    input, button { padding: 8px; margin: 5px; }
+    ul { list-style-type: none; padding: 0; }
+    li { background: #fff; margin-bottom: 5px; padding: 10px; border-radius: 5px; }
+    .delete-btn { float: right; color: red; cursor: pointer; }
+  </style>
 </head>
 <body>
-    <!-- Menu điều hướng -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">Quản Lý Sửa Chữa Máy Lạnh Ôtô</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#">Trang Chủ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#addRepairModal">Thêm Sửa Chữa</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="exportData()">Xuất Dữ Liệu</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="document.getElementById('importFile').click()">Nhập Dữ Liệu</a>
-                        <input type="file" id="importFile" style="display: none;" accept=".json">
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+  <h1>Quản Lý Sửa Chữa Máy Lạnh Ô Tô</h1>
+  <form id="repairForm">
+    <input type="text" id="customer" placeholder="Tên khách hàng" required>
+    <input type="text" id="service" placeholder="Dịch vụ" required>
+    <input type="number" id="cost" placeholder="Chi phí" required>
+    <button type="submit">Thêm</button>
+  </form>
+  <ul id="repairList"></ul>  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAJnH6cnUcGKh62gRvxCeGf9PMuEq9IP6Y",
+      authDomain: "maylanh-458b5.firebaseapp.com",
+      projectId: "maylanh-458b5",
+      storageBucket: "maylanh-458b5.appspot.com",
+      messagingSenderId: "473979950660",
+      appId: "1:473979950660:web:0eaebfd2d37a119f940e11",
+      measurementId: "G-JB7N34EH1K"
+    };
 
-    <!-- Nội dung chính -->
-    <div class="container table-container">
-        <h2 class="text-center my-4">Danh Sách Sửa Chữa Máy Lạnh Ôtô</h2>
-        <!-- Tìm kiếm -->
-        <div class="search-container">
-            <div class="input-group mb-3">
-                <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm theo Biển Số Xe hoặc Loại Xe">
-                <button class="btn btn-primary" onclick="searchRepairs()">Tìm Kiếm</button>
-                <button class="btn btn-success ms-2" onclick="filterWarranty()">Lọc Cần Bảo Hành</button>
-                <button class="btn btn-secondary ms-2" onclick="resetSearch()">Hiển Thị Tất Cả</button>
-            </div>
-        </div>
-        <!-- Bảng dữ liệu -->
-        <table class="table table-bordered table-striped">
-            <thead class="table-primary">
-                <tr>
-                    <th>Biển Số Xe</th>
-                    <th>Loại Xe</th>
-                    <th>Ngày Sửa Chữa</th>
-                    <th>Nội Dung</th>
-                    <th>Thời Gian Bảo Hành</th>
-                    <th>Trạng Thái Bảo Hành</th>
-                    <th>Hành Động</th>
-                </tr>
-            </thead>
-            <tbody id="repairTableBody">
-                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
-            </tbody>
-        </table>
-    </div>
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    <!-- Modal thêm sửa chữa -->
-    <div class="modal fade" id="addRepairModal" tabindex="-1" aria-labelledby="addRepairModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addRepairModalLabel">Thêm Sửa Chữa Mới</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addRepairForm">
-                        <div class="mb-3">
-                            <label for="licensePlate" class="form-label">Biển Số Xe</label>
-                            <input type="text" class="form-control" id="licensePlate" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="carType" class="form-label">Loại Xe</label>
-                            <input type="text" class="form-control" id="carType" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="repairDate" class="form-label">Ngày Sửa Chữa</label>
-                            <input type="date" class="form-control" id="repairDate" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="content" class="form-label">Nội Dung</label>
-                            <textarea class="form-control" id="content" required></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="warrantyPeriod" class="form-label">Thời Gian Bảo Hành</label>
-                            <select class="form-select" id="warrantyPeriod" required>
-                                <option value="6 tháng">6 tháng</option>
-                                <option value="12 tháng">12 tháng</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Thêm</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    const repairForm = document.getElementById('repairForm');
+    const repairList = document.getElementById('repairList');
 
-    <!-- JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Cấu hình Firebase (Thay bằng thông tin từ Firebase Console của bạn)
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+    repairForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const customer = document.getElementById('customer').value;
+      const service = document.getElementById('service').value;
+      const cost = document.getElementById('cost').value;
+
+      await db.collection('repairs').add({
+        customer,
+        service,
+        cost: Number(cost),
+        date: new Date()
+      });
+
+      repairForm.reset();
+    });
+
+    db.collection('repairs').orderBy('date', 'desc').onSnapshot(snapshot => {
+      repairList.innerHTML = '';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement('li');
+        li.textContent = `${data.customer} - ${data.service} - ${data.cost} VND`;
+
+        const deleteBtn = document.createElement('span');
+        deleteBtn.textContent = '❌';
+        deleteBtn.classList.add('delete-btn');
+        deleteBtn.onclick = async () => {
+          if (confirm('Xóa mục này?')) {
+            await db.collection('repairs').doc(doc.id).delete();
+          }
         };
 
-        // Khởi tạo Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // Tính trạng thái bảo hành
-        function checkWarrantyStatus(repairDate, warrantyPeriod) {
-            const repairDateObj = new Date(repairDate);
-            const currentDate = new Date();
-            const warrantyMonths = warrantyPeriod === '6 tháng' ? 6 : 12;
-            const warrantyEndDate = new Date(repairDateObj.setMonth(repairDateObj.getMonth() + warrantyMonths));
-            return warrantyEndDate >= currentDate ? 'Còn bảo hành' : 'Hết bảo hành';
-        }
-
-        // Tải dữ liệu từ Firestore
-        async function loadRepairs(filter = null) {
-            const tableBody = document.getElementById('repairTableBody');
-            tableBody.innerHTML = '';
-            let repairs = [];
-            const snapshot = await db.collection('repairs').get();
-            snapshot.forEach(doc => {
-                repairs.push({ id: doc.id, ...doc.data() });
-            });
-
-            let filteredRepairs = repairs;
-            if (filter === 'warranty') {
-                filteredRepairs = repairs.filter(repair => checkWarrantyStatus(repair.repairDate, repair.warrantyPeriod) === 'Còn bảo hành');
-            } else if (filter) {
-                const searchTerm = filter.toLowerCase();
-                filteredRepairs = repairs.filter(repair => 
-                    repair.licensePlate.toLowerCase().includes(searchTerm) || 
-                    repair.carType.toLowerCase().includes(searchTerm)
-                );
-            }
-
-            filteredRepairs.forEach((repair, index) => {
-                const row = document.createElement('tr');
-                const warrantyStatus = checkWarrantyStatus(repair.repairDate, repair.warrantyPeriod);
-                row.innerHTML = `
-                    <td>${repair.licensePlate}</td>
-                    <td>${repair.carType}</td>
-                    <td>${repair.repairDate}</td>
-                    <td>${repair.content}</td>
-                    <td>${repair.warrantyPeriod}</td>
-                    <td>${warrantyStatus}</td>
-                    <td>
-                        <button class="btn btn-sm btn-warning" onclick="editRepair('${repair.id}', ${index})">Sửa</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteRepair('${repair.id}')">Xóa</button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
-        // Thêm sửa chữa mới
-        document.getElementById('addRepairForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const form = document.getElementById('addRepairForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const repair = {
-                licensePlate: document.getElementById('licensePlate').value.trim(),
-                carType: document.getElementById('carType').value.trim(),
-                repairDate: document.getElementById('repairDate').value,
-                content: document.getElementById('content').value.trim(),
-                warrantyPeriod: document.getElementById('warrantyPeriod').value
-            };
-
-            // Kiểm tra trùng biển số xe
-            const snapshot = await db.collection('repairs').where('licensePlate', '==', repair.licensePlate).get();
-            if (!snapshot.empty) {
-                alert('Biển số xe đã tồn tại. Vui lòng nhập biển số khác.');
-                return;
-            }
-
-            // Lưu vào Firestore
-            await db.collection('repairs').add(repair);
-            loadRepairs();
-            
-            bootstrap.Modal.getInstance(document.getElementById('addRepairModal')).hide();
-            form.reset();
-        });
-
-        // Sửa thông tin sửa chữa
-        async function editRepair(docId, index) {
-            const repairs = [];
-            const snapshot = await db.collection('repairs').get();
-            snapshot.forEach(doc => repairs.push({ id: doc.id, ...doc.data() }));
-            const repair = repairs[index];
-
-            if (confirm('Bạn muốn sửa thông tin này?')) {
-                const newLicensePlate = prompt('Biển Số Xe:', repair.licensePlate);
-                if (newLicensePlate && repairs.some((r, i) => i !== index && r.licensePlate === newLicensePlate.trim())) {
-                    alert('Biển số xe đã tồn tại. Vui lòng nhập biển số khác.');
-                    return;
-                }
-
-                const updatedRepair = {
-                    licensePlate: newLicensePlate ? newLicensePlate.trim() : repair.licensePlate,
-                    carType: prompt('Loại Xe:', repair.carType) || repair.carType,
-                    repairDate: prompt('Ngày Sửa Chữa:', repair.repairDate) || repair.repairDate,
-                    content: prompt('Nội Dung:', repair.content) || repair.content,
-                    warrantyPeriod: prompt('Thời Gian Bảo Hành (6 tháng hoặc 12 tháng):', repair.warrantyPeriod) || repair.warrantyPeriod
-                };
-
-                await db.collection('repairs').doc(docId).update(updatedRepair);
-                loadRepairs();
-            }
-        }
-
-        // Xóa thông tin sửa chữa
-        async function deleteRepair(docId) {
-            if (confirm('Bạn có chắc muốn xóa?')) {
-                await db.collection('repairs').doc(docId).delete();
-                loadRepairs();
-            }
-        }
-
-        // Tìm kiếm
-        function searchRepairs() {
-            const searchTerm = document.getElementById('searchInput').value;
-            loadRepairs(searchTerm);
-        }
-
-        // Lọc bản ghi cần bảo hành
-        function filterWarranty() {
-            loadRepairs('warranty');
-        }
-
-        // Hiển thị tất cả bản ghi
-        function resetSearch() {
-            document.getElementById('searchInput').value = '';
-            loadRepairs();
-        }
-
-        // Xuất dữ liệu ra tệp JSON
-        async function exportData() {
-            const repairs = [];
-            const snapshot = await db.collection('repairs').get();
-            snapshot.forEach(doc => repairs.push(doc.data()));
-            if (repairs.length === 0) {
-                alert('Không có dữ liệu để xuất.');
-                return;
-            }
-            const dataStr = JSON.stringify(repairs, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'suachua_maylanh_oto.json';
-            a.click();
-            URL.revokeObjectURL(url);
-            alert('Dữ liệu đã được xuất. Vui lòng chọn thư mục để lưu tệp trên điện thoại.');
-        }
-
-        // Nhập dữ liệu từ tệp JSON
-        document.getElementById('importFile').addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(event) {
-                try {
-                    const importedData = JSON.parse(event.target.result);
-                    if (!Array.isArray(importedData)) {
-                        throw new Error('Tệp không đúng định dạng.');
-                    }
-                    const existingRepairs = [];
-                    const snapshot = await db.collection('repairs').get();
-                    snapshot.forEach(doc => existingRepairs.push(doc.data()));
-                    
-                    for (const newRepair of importedData) {
-                        if (!existingRepairs.some(r => r.licensePlate === newRepair.licensePlate)) {
-                            await db.collection('repairs').add(newRepair);
-                        }
-                    }
-                    loadRepairs();
-                    alert('Nhập dữ liệu thành công.');
-                } catch (error) {
-                    alert('Lỗi khi nhập dữ liệu: ' + error.message);
-                }
-                e.target.value = '';
-            };
-            reader.readAsText(file);
-        });
-
-        // Tải dữ liệu khi trang được mở
-        window.onload = loadRepairs;
-    </script>
-</body>
+        li.appendChild(deleteBtn);
+        repairList.appendChild(li);
+      });
+    });
+  </script></body>
 </html>
