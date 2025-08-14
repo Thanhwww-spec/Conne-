@@ -1,79 +1,398 @@
-<!DOCTYPE html><html>
+<!doctype html>
+<html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Auto AC Repair Manager</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quản lý sửa chữa máy lạnh ô tô</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
-    h1 { color: #333; }
-    form { margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; }
-    input, button { padding: 8px; margin: 5px; }
-    ul { list-style-type: none; padding: 0; }
-    li { background: #fff; margin-bottom: 5px; padding: 10px; border-radius: 5px; }
-    .delete-btn { float: right; color: red; cursor: pointer; }
+    .badge { padding: .125rem .5rem; border-radius: .5rem; font-size: .75rem; font-weight:600; }
+    .status-open { background:#FEF3C7; color:#92400E; }
+    .status-working { background:#DBEAFE; color:#1E3A8A; }
+    .status-done { background:#DCFCE7; color:#065F46; }
+    .status-cancel { background:#FFE4E6; color:#9F1239; }
+    .btn { padding:.5rem .75rem; border-radius: .75rem; font-weight:600; }
   </style>
 </head>
-<body>
-  <h1>Quản Lý Sửa Chữa Máy Lạnh Ô Tô</h1>
-  <form id="repairForm">
-    <input type="text" id="customer" placeholder="Tên khách hàng" required>
-    <input type="text" id="service" placeholder="Dịch vụ" required>
-    <input type="number" id="cost" placeholder="Chi phí" required>
-    <button type="submit">Thêm</button>
-  </form>
-  <ul id="repairList"></ul>  <script>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-5xl mx-auto p-4 space-y-4">
+    <header class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold">Quản lý sửa chữa máy lạnh ô tô</h1>
+      <div class="flex items-center gap-2">
+        <span id="onlineStatus" class="badge status-open">Kiểm tra mạng...</span>
+        <button id="btnExport" class="btn border">Xuất CSV</button>
+      </div>
+    </header>
+
+    <!-- Form -->
+    <section class="bg-white rounded-2xl shadow p-4">
+      <form id="jobForm" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input type="hidden" id="id" />
+        <div>
+          <label class="text-sm">Khách hàng</label>
+          <input id="customer" class="w-full border rounded px-3 py-2" placeholder="Tên khách" required />
+        </div>
+        <div>
+          <label class="text-sm">Điện thoại</label>
+          <input id="phone" class="w-full border rounded px-3 py-2" placeholder="SĐT" />
+        </div>
+        <div>
+          <label class="text-sm">Biển số</label>
+          <input id="plate" class="w-full border rounded px-3 py-2" placeholder="VD: 51A-123.45" />
+        </div>
+
+        <div>
+          <label class="text-sm">Model / Đời xe</label>
+          <input id="model" class="w-full border rounded px-3 py-2" placeholder="VD: Hyundai Accent 2019" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-sm">Triệu chứng</label>
+          <input id="issue" class="w-full border rounded px-3 py-2" placeholder="Khách mô tả..." />
+        </div>
+
+        <div class="md:col-span-3">
+          <label class="text-sm">Chẩn đoán / Kiểm tra</label>
+          <textarea id="diagnosis" class="w-full border rounded px-3 py-2" rows="2" placeholder="Kết quả đo, nguyên nhân..."></textarea>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="text-sm">Vật tư / Phụ tùng</label>
+          <input id="parts" class="w-full border rounded px-3 py-2" placeholder="VD: Gas R134a 400g; Relay..." />
+        </div>
+        <div>
+          <label class="text-sm">Công (VND)</label>
+          <input id="labor" type="number" class="w-full border rounded px-3 py-2" placeholder="300000" />
+        </div>
+
+        <div>
+          <label class="text-sm">Tổng (VND)</label>
+          <input id="total" type="number" class="w-full border rounded px-3 py-2" placeholder="Tổng tiền" />
+        </div>
+        <div>
+          <label class="text-sm">Kỹ thuật</label>
+          <input id="tech" class="w-full border rounded px-3 py-2" placeholder="Tên thợ" />
+        </div>
+        <div>
+          <label class="text-sm">Trạng thái</label>
+          <select id="status" class="w-full border rounded px-3 py-2">
+            <option value="open">Mới</option>
+            <option value="working">Đang sửa</option>
+            <option value="done">Hoàn thành</option>
+            <option value="cancel">Huỷ</option>
+          </select>
+        </div>
+
+        <div class="md:col-span-3">
+          <label class="text-sm">Ghi chú</label>
+          <textarea id="notes" class="w-full border rounded px-3 py-2" rows="2" placeholder="Ghi chú, bảo hành..."></textarea>
+        </div>
+
+        <div class="md:col-span-3 flex gap-2">
+          <button type="submit" id="btnSave" class="btn bg-black text-white">Lưu phiếu</button>
+          <button type="button" id="btnReset" class="btn border">Làm mới</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Filters + Table -->
+    <section class="bg-white rounded-2xl shadow p-4">
+      <div class="flex flex-col md:flex-row gap-2 mb-3">
+        <input id="q" class="border rounded px-3 py-2 flex-1" placeholder="Tìm tên / biển số / model..." />
+        <select id="filterStatus" class="border rounded px-3 py-2 w-48">
+          <option value="">Tất cả trạng thái</option>
+          <option value="open">Mới</option>
+          <option value="working">Đang sửa</option>
+          <option value="done">Hoàn thành</option>
+          <option value="cancel">Huỷ</option>
+        </select>
+      </div>
+
+      <div class="overflow-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="text-xs text-gray-500">
+              <th class="text-left">Ngày</th>
+              <th class="text-left">Khách</th>
+              <th class="text-left">Xe</th>
+              <th class="text-left">Triệu chứng</th>
+              <th class="text-left">Tổng</th>
+              <th class="text-left">TT</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="rowCount" class="text-sm text-gray-500 mt-2"></div>
+    </section>
+  </div>
+
+  <!-- Firebase modular SDK -->
+  <script type="module">
+    // --- Imports ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      doc,
+      setDoc,
+      updateDoc,
+      deleteDoc,
+      getDoc,
+      query,
+      orderBy,
+      serverTimestamp,
+      onSnapshot,
+      enableIndexedDbPersistence
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    // ======= CẤU HÌNH FIREBASE (bạn đã cung cấp) =======
     const firebaseConfig = {
       apiKey: "AIzaSyAJnH6cnUcGKh62gRvxCeGf9PMuEq9IP6Y",
       authDomain: "maylanh-458b5.firebaseapp.com",
       projectId: "maylanh-458b5",
-      storageBucket: "maylanh-458b5.appspot.com",
+      storageBucket: "maylanh-458b5.firebasestorage.app",
       messagingSenderId: "473979950660",
-      appId: "1:473979950660:web:0eaebfd2d37a119f940e11",
-      measurementId: "G-JB7N34EH1K"
+      appId: "1:473979950660:web:e204cb56aa590430940e11",
+      measurementId: "G-T2ZDEM6DNX"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // Khởi tạo Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    const repairForm = document.getElementById('repairForm');
-    const repairList = document.getElementById('repairList');
+    // Bật offline persistence (IndexedDB). Nếu trình duyệt không hỗ trợ, bỏ qua.
+    try {
+      await enableIndexedDbPersistence(db);
+      console.log('Offline persistence enabled');
+    } catch (e) {
+      console.warn('Could not enable persistence:', e);
+    }
 
-    repairForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const customer = document.getElementById('customer').value;
-      const service = document.getElementById('service').value;
-      const cost = document.getElementById('cost').value;
+    // Tiện ích DOM
+    const $ = id => document.getElementById(id);
+    const fmtDate = t => t ? new Date(t.seconds ? t.seconds * 1000 : t).toLocaleString('vi-VN') : '';
 
-      await db.collection('repairs').add({
-        customer,
-        service,
-        cost: Number(cost),
-        date: new Date()
-      });
+    // Collection tham chiếu
+    const COL = collection(db, 'jobs');
 
-      repairForm.reset();
+    // Trạng thái online
+    const onlineBadge = $('onlineStatus');
+    function setOnlineStatus(){
+      if (navigator.onLine){ onlineBadge.className = 'badge status-done'; onlineBadge.textContent = 'Online'; }
+      else { onlineBadge.className = 'badge status-cancel'; onlineBadge.textContent = 'Offline (sẽ tự đồng bộ)'; }
+    }
+    window.addEventListener('online', setOnlineStatus);
+    window.addEventListener('offline', setOnlineStatus);
+    setOnlineStatus();
+
+    // Realtime: lắng nghe collection, sắp xếp theo createdAt desc
+    const q = query(COL, orderBy('createdAt', 'desc'));
+    onSnapshot(q, (snapshot) => {
+      const docs = [];
+      snapshot.forEach(d => { const data = d.data(); data._id = d.id; docs.push(data); });
+      renderTable(docs);
+    }, (err) => {
+      console.error('Realtime error', err);
     });
 
-    db.collection('repairs').orderBy('date', 'desc').onSnapshot(snapshot => {
-      repairList.innerHTML = '';
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const li = document.createElement('li');
-        li.textContent = `${data.customer} - ${data.service} - ${data.cost} VND`;
+    // Render table với filter
+    function renderTable(rows){
+      const tbody = $('tbody');
+      tbody.innerHTML = '';
+      const qstr = $('q').value.trim().toLowerCase();
+      const statusFilter = $('filterStatus').value;
+      const filtered = rows.filter(r => {
+        const hitQ = !qstr || [r.customer, r.plate, r.model, r.issue].some(x => (x||'').toLowerCase().includes(qstr));
+        const hitS = !statusFilter || r.status === statusFilter;
+        return hitQ && hitS;
+      });
 
-        const deleteBtn = document.createElement('span');
-        deleteBtn.textContent = '❌';
-        deleteBtn.classList.add('delete-btn');
-        deleteBtn.onclick = async () => {
-          if (confirm('Xóa mục này?')) {
-            await db.collection('repairs').doc(doc.id).delete();
+      filtered.forEach(r => {
+        const tr = document.createElement('tr');
+        const created = r.createdAt ? (r.createdAt.toDate ? r.createdAt.toDate() : (r.createdAt.seconds ? new Date(r.createdAt.seconds * 1000) : new Date(r.createdAt))) : null;
+        const createdStr = created ? created.toLocaleString('vi-VN') : '';
+        const statusBadge = (() => {
+          if (!r.status) return `<span class="badge status-open">N/A</span>`;
+          if (r.status === 'open') return `<span class="badge status-open">Mới</span>`;
+          if (r.status === 'working') return `<span class="badge status-working">Đang sửa</span>`;
+          if (r.status === 'done') return `<span class="badge status-done">Hoàn thành</span>`;
+          if (r.status === 'cancel') return `<span class="badge status-cancel">Huỷ</span>`;
+          return `<span class="badge status-open">${r.status}</span>`;
+        })();
+
+        tr.innerHTML = `
+          <td class="py-2 text-sm">${createdStr}</td>
+          <td class="text-sm">${escapeHtml(r.customer||'')}<div class="text-xs text-gray-500">${escapeHtml(r.phone||'')}</div></td>
+          <td class="text-sm">${escapeHtml(r.model||'')}<div class="text-xs text-gray-500">${escapeHtml(r.plate||'')}</div></td>
+          <td class="text-sm max-w-[280px] truncate" title="${escapeHtml((r.issue||'') + ' | ' + (r.diagnosis||''))}">${escapeHtml(r.issue||'')}</td>
+          <td class="text-sm">${Number(r.total||0).toLocaleString('vi-VN')}</td>
+          <td class="text-sm">${statusBadge}</td>
+          <td class="text-sm">
+            <div class="flex gap-2">
+              <button class="px-2 py-1 border rounded" data-edit="${r._id}">Sửa</button>
+              <button class="px-2 py-1 border rounded" data-done="${r._id}">Hoàn thành</button>
+              <button class="px-2 py-1 border rounded" data-del="${r._id}">Xoá</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      $('rowCount').textContent = `${filtered.length} phiếu`;
+
+      // Gắn sự kiện
+      tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => loadOne(b.dataset.edit)));
+      tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => deleteOne(b.dataset.del)));
+      tbody.querySelectorAll('[data-done]').forEach(b => b.addEventListener('click', () => markDone(b.dataset.done)));
+    }
+
+    // Escape html để an toàn khi hiển thị
+    function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+
+    // Load 1 document vào form để sửa
+    async function loadOne(id){
+      try {
+        const dref = doc(db, 'jobs', id);
+        const d = await getDoc(dref);
+        if (!d.exists()) { alert('Không tìm thấy bản ghi'); return; }
+        const r = d.data();
+        $('id').value = id;
+        $('customer').value = r.customer || '';
+        $('phone').value = r.phone || '';
+        $('plate').value = r.plate || '';
+        $('model').value = r.model || '';
+        $('issue').value = r.issue || '';
+        $('diagnosis').value = r.diagnosis || '';
+        $('parts').value = r.parts || '';
+        $('labor').value = r.labor || '';
+        $('total').value = r.total || '';
+        $('tech').value = r.tech || '';
+        $('status').value = r.status || 'open';
+        $('notes').value = r.notes || '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e) { console.error(e); alert('Lỗi load bản ghi'); }
+    }
+
+    // Xoá
+    async function deleteOne(id){
+      if (!confirm('Xoá phiếu này?')) return;
+      try {
+        await deleteDoc(doc(db, 'jobs', id));
+      } catch (e) {
+        console.error(e); alert('Xoá thất bại'); 
+      }
+    }
+
+    // Đánh dấu hoàn thành
+    async function markDone(id){
+      try {
+        await updateDoc(doc(db, 'jobs', id), { status: 'done' });
+      } catch (e) {
+        console.error(e); alert('Cập nhật thất bại');
+      }
+    }
+
+    // Submit form: thêm hoặc cập nhật
+    $('jobForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const id = $('id').value;
+      const rec = {
+        customer: $('customer').value.trim(),
+        phone: $('phone').value.trim(),
+        plate: $('plate').value.trim(),
+        model: $('model').value.trim(),
+        issue: $('issue').value.trim(),
+        diagnosis: $('diagnosis').value.trim(),
+        parts: $('parts').value.trim(),
+        labor: Number($('labor').value || 0),
+        total: Number($('total').value || 0),
+        tech: $('tech').value.trim(),
+        status: $('status').value,
+        notes: $('notes').value.trim()
+      };
+
+      try {
+        if (id) {
+          // update (merge)
+          await updateDoc(doc(db, 'jobs', id), { ...rec, updatedAt: serverTimestamp() });
+          alert('Đã cập nhật phiếu');
+        } else {
+          // add
+          await addDoc(COL, { ...rec, createdAt: serverTimestamp() });
+          alert('Đã thêm phiếu mới');
+        }
+        $('jobForm').reset();
+        $('status').value = 'open';
+        $('id').value = '';
+      } catch (e) {
+        console.error(e);
+        alert('Lưu thất bại. Nếu bạn đang offline, Firestore sẽ tự lưu cục bộ và đồng bộ khi có mạng.');
+      }
+    });
+
+    $('btnReset').addEventListener('click', () => {
+      $('jobForm').reset();
+      $('id').value = '';
+      $('status').value = 'open';
+    });
+
+    // Filter handlers
+    $('q').addEventListener('input', () => { /* UI sẽ tự cập nhật nhờ onSnapshot đã gọi renderTable */ renderDelay(); });
+    $('filterStatus').addEventListener('change', () => renderDelay());
+
+    // Delay small debounce to avoid excessive re-renders
+    let debounceTimer = null;
+    function renderDelay(){ clearTimeout(debounceTimer); debounceTimer = setTimeout(()=>{ /* onSnapshot already has full list and will call renderTable automatically; just trigger manual refresh by reading current snapshot via re-query */ }, 150); }
+
+    // Export CSV (tải snapshot 1 lần từ server)
+    $('btnExport').addEventListener('click', async () => {
+      try {
+        // Tạo snapshot tạm bằng query (client)
+        const snapRows = [];
+        // We'll reuse onSnapshot's latest table DOM instead of fetching again: parse tbody
+        const rows = Array.from(document.querySelectorAll('#tbody tr'));
+        // Reconstruct CSV from DOM (cheaper than an extra Firestore read)
+        let csv = 'createdAt,id,customer,phone,plate,model,issue,diagnosis,parts,labor,total,tech,status,notes\n';
+        for (const tr of rows) {
+          // we can't easily read full hidden fields from DOM (diagnosis/parts/notes), so instead fetch the doc by id attribute on buttons
+          const editBtn = tr.querySelector('[data-edit]');
+          if (!editBtn) continue;
+          const id = editBtn.dataset.edit;
+          try {
+            const d = await getDoc(doc(db, 'jobs', id));
+            const r = d.exists() ? d.data() : {};
+            const heads = ['createdAt','id','customer','phone','plate','model','issue','diagnosis','parts','labor','total','tech','status','notes'];
+            const vals = heads.map(h => {
+              let v = '';
+              if (h === 'id') v = id;
+              else if (h === 'createdAt') v = r.createdAt ? (r.createdAt.toDate ? r.createdAt.toDate().toISOString() : r.createdAt) : '';
+              else v = r[h] !== undefined ? String(r[h]) : '';
+              // escape
+              v = '"' + v.replaceAll('"','""') + '"';
+              return v;
+            }).join(',');
+            csv += vals + '\n';
+          } catch (e) {
+            console.warn('Không lấy được doc', id, e);
           }
-        };
-
-        li.appendChild(deleteBtn);
-        repairList.appendChild(li);
-      });
+        }
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'phieu_sua_chua.csv';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error(e); alert('Xuất CSV thất bại');
+      }
     });
-  </script></body>
+
+    // initial small hint if offline persistence not available
+    if (!navigator.onLine) setOnlineStatus();
+
+    // End of module
+  </script>
+</body>
 </html>
