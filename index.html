@@ -1,73 +1,33 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Quản Lý Sửa Chữa Máy Lạnh - UI 3D Pro</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      color: white;
-      background: black;
-      overflow-x: hidden;
-    }
-    #form, table {
-      position: relative;
-      z-index: 2;
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border-radius: 15px;
-      border: 1px solid rgba(255,255,255,0.3);
-      padding: 15px;
-      margin: 10px;
-      box-shadow: 0 4px 30px rgba(0,0,0,0.5);
-      animation: fadeIn 0.8s ease;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-    }
-    th, td {
-      border: 1px solid rgba(255,255,255,0.4);
-      padding: 8px;
-      text-align: center;
-    }
-    button {
-      padding: 8px 15px;
-      margin: 5px;
-      cursor: pointer;
-      background: linear-gradient(135deg, #00ffff, #0088ff);
-      border: none;
-      color: white;
-      font-weight: bold;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    button:hover {
-      transform: translateY(-3px) scale(1.05);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-    }
-    input, select {
-      padding: 5px;
-      border-radius: 5px;
-      border: none;
-      margin-bottom: 5px;
-    }
-    canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 0;
-    }
-    @keyframes fadeIn {
-      from {opacity: 0; transform: translateY(20px);}
-      to {opacity: 1; transform: translateY(0);}
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Quản Lý Sửa Chữa Máy Lạnh - UI 3D Pro</title>
+<style>
+  body {margin:0; font-family:Arial,sans-serif; color:white; background:black; overflow-x:hidden;}
+  #loginScreen {position:fixed; top:0; left:0; width:100%; height:100%; background:black; display:flex; justify-content:center; align-items:center; flex-direction:column; z-index:10;}
+  #loginScreen input {padding:10px; font-size:16px; border-radius:5px; border:none; margin-bottom:10px;}
+  #loginScreen button {padding:10px 20px; font-size:16px; cursor:pointer; border:none; border-radius:5px; background:linear-gradient(135deg,#00ffff,#0088ff); color:white; font-weight:bold;}
+  #form, table {position:relative; z-index:2; background:rgba(255,255,255,0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius:15px; border:1px solid rgba(255,255,255,0.3); padding:15px; margin:10px; box-shadow:0 4px 30px rgba(0,0,0,0.5); animation:fadeIn 0.8s ease;}
+  table {border-collapse:collapse; width:100%;}
+  th, td {border:1px solid rgba(255,255,255,0.4); padding:8px; text-align:center;}
+  button.actionBtn {padding:8px 15px; margin:5px; cursor:pointer; background:linear-gradient(135deg, #00ffff, #0088ff); border:none; color:white; font-weight:bold; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.4); transition:transform 0.2s ease, box-shadow 0.2s ease;}
+  button.actionBtn:hover {transform:translateY(-3px) scale(1.05); box-shadow:0 8px 20px rgba(0,0,0,0.6);}
+  input, select {padding:5px; border-radius:5px; border:none; margin-bottom:5px;}
+  canvas {position:fixed; top:0; left:0; z-index:0;}
+  @keyframes fadeIn {from {opacity:0; transform:translateY(20px);} to {opacity:1; transform:translateY(0);}}
+</style>
 </head>
 <body>
+
+<div id="loginScreen">
+  <h1 style="color:white;">Đăng Nhập Quản Trị</h1>
+  <input type="password" id="loginPass" placeholder="Nhập mật khẩu">
+  <button id="loginBtn">Đăng nhập</button>
+  <p id="loginMsg" style="color:red;margin-top:10px;"></p>
+</div>
+
+<div id="mainContent" style="display:none;">
   <canvas id="bg"></canvas>
 
   <div id="form">
@@ -83,12 +43,13 @@
       <option value="6T">6 Tháng</option>
       <option value="12T">12 Tháng</option>
     </select><br>
-    <button onclick="secureAction('add')">➕ Thêm</button>
-    <button onclick="exportCSV()">⬇ Xuất CSV</button>
-    <input type="file" id="fileInput" accept=".csv" onchange="importCSV(event)">
+    <button class="actionBtn" id="addBtn">➕ Thêm</button>
+    <button class="actionBtn" id="exportBtn">⬇ Xuất CSV</button>
+    <input type="file" id="fileInput" accept=".csv">
     <br><br>
     <label>Tìm kiếm biển số:</label>
-    <input type="text" id="search" placeholder="Nhập biển số..." oninput="loadRepairs()">
+    <input type="text" id="search" placeholder="Nhập biển số...">
+    <button class="actionBtn" id="searchBtn">🔍 Tìm kiếm</button>
   </div>
 
   <h2 style="margin-left:10px;">📜 Danh sách sửa chữa</h2>
@@ -105,158 +66,263 @@
     </thead>
     <tbody id="repairTable"></tbody>
   </table>
+</div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAJnH6cnUcGKh62gRvxCeGf9PMuEq9IP6Y",
-      authDomain: "maylanh-458b5.firebaseapp.com",
-      projectId: "maylanh-458b5",
-      storageBucket: "maylanh-458b5.firebasestorage.app",
-      messagingSenderId: "473979950660",
-      appId: "1:473979950660:web:e204cb56aa590430940e11",
-      measurementId: "G-T2ZDEM6DNX"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyAJnH6cnUcGKh62gRvxCeGf9PMuEq9IP6Y",
+  authDomain: "maylanh-458b5.firebaseapp.com",
+  projectId: "maylanh-458b5",
+  storageBucket: "maylanh-458b5.appspot.com",
+  messagingSenderId: "473979950660",
+  appId: "1:473979950660:web:e204cb56aa590430940e11",
+  measurementId: "G-T2ZDEM6DNX"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const ADMIN_PASSWORD = "123456";
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const ADMIN_PASSWORD = "8888";
+let sessionTimer;
 
-    function tinhTrangBaoHanh(ngay, baoHanh) {
-      const start = new Date(ngay);
-      const months = baoHanh === "6T" ? 6 : 12;
-      start.setMonth(start.getMonth() + months);
-      return (new Date() <= start) ? "Còn bảo hành" : "Hết bảo hành";
-    }
+// =================== Hàm tiện ích ===================
+function startSession() {
+  if(sessionTimer) clearTimeout(sessionTimer);
+  sessionTimer = setTimeout(()=>{
+    alert("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
+    document.getElementById("mainContent").style.display="none";
+    document.getElementById("loginScreen").style.display="flex";
+    document.getElementById("loginPass").value="";
+  },60000);
+}
 
-    async function addRepair() {
-      const ngay = document.getElementById('ngay').value;
-      const bienSo = document.getElementById('bienSo').value;
-      const noiDung = document.getElementById('noiDung').value;
-      const baoHanh = document.getElementById('baoHanh').value;
-      if (!ngay || !bienSo || !noiDung || !baoHanh) {
-        alert("Vui lòng nhập đầy đủ thông tin!");
-        return;
-      }
-      await addDoc(collection(db, "repairs"), { ngay, bienSo, noiDung, baoHanh });
-      loadRepairs();
-    }
+function resetSession(){startSession();}
 
-    async function loadRepairs() {
-      const tableBody = document.getElementById("repairTable");
-      const searchValue = document.getElementById("search").value.toLowerCase();
-      tableBody.innerHTML = "";
-      const querySnapshot = await getDocs(collection(db, "repairs"));
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (searchValue && !data.bienSo.toLowerCase().includes(searchValue)) return;
-        const trangThai = tinhTrangBaoHanh(data.ngay, data.baoHanh);
-        const tr = document.createElement("tr");
-        tr.style.animation = "fadeIn 0.5s ease";
-        tr.innerHTML = `
-          <td>${data.ngay}</td>
-          <td>${data.bienSo}</td>
-          <td>${data.noiDung}</td>
-          <td>${data.baoHanh}</td>
-          <td style="color:${trangThai==='Còn bảo hành'?'#0f0':'#f00'}">${trangThai}</td>
-          <td><button onclick="secureAction('delete','${docSnap.id}')">🗑 Xóa</button></td>
-        `;
-        tableBody.appendChild(tr);
-      });
-    }
+function escapeHtml(text){
+  if(!text) return "";
+  return text.replace(/&/g,"&amp;")
+             .replace(/</g,"&lt;")
+             .replace(/>/g,"&gt;")
+             .replace(/"/g,"&quot;")
+             .replace(/'/g,"&#039;");
+}
 
-    window.deleteRepair = async function(id) {
-      await deleteDoc(doc(db, "repairs", id));
-      loadRepairs();
-    }
+function tinhTrangBaoHanh(ngay, baoHanh){
+  const start=new Date(ngay);
+  start.setMonth(start.getMonth()+(baoHanh==="6T"?6:12));
+  return (new Date() <= start) ? "Còn bảo hành":"Hết bảo hành";
+}
 
-    window.secureAction = function(action, id) {
-      const pass = prompt("Nhập mật khẩu quản trị:");
-      if (pass === ADMIN_PASSWORD) {
-        if (action === "add") addRepair();
-        else if (action === "delete") deleteRepair(id);
-      } else {
-        alert("Sai mật khẩu!");
-      }
-    }
+function saveLocalRepair(repair){
+  let localData=JSON.parse(localStorage.getItem('repairsOffline')||'[]');
+  localData.push(repair);
+  localStorage.setItem('repairsOffline',JSON.stringify(localData));
+}
 
-    window.exportCSV = async function() {
-      const querySnapshot = await getDocs(collection(db, "repairs"));
-      let csv = "Ngày,Biển số,Nội dung,Bảo hành\n";
-      querySnapshot.forEach(docSnap => {
-        const d = docSnap.data();
-        csv += `${d.ngay},${d.bienSo},${d.noiDung},${d.baoHanh}\n`;
-      });
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "data.csv";
-      a.click();
-    }
+async function syncLocalRepairs(){
+  const localData=JSON.parse(localStorage.getItem('repairsOffline')||'[]');
+  if(localData.length===0) return;
+  for(let repair of localData){
+    try {await addDoc(collection(db,"repairs"), repair);}
+    catch(err){console.error("Sync thất bại:",err); return;}
+  }
+  localStorage.removeItem('repairsOffline');
+  loadRepairs();
+}
 
-    window.importCSV = async function(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const text = await file.text();
-      const lines = text.split("\n").slice(1);
-      for (let line of lines) {
-        if (!line.trim()) continue;
-        const [ngay, bienSo, noiDung, baoHanh] = line.split(",");
-        await addDoc(collection(db, "repairs"), { ngay, bienSo, noiDung, baoHanh });
-      }
-      loadRepairs();
-    }
+// =================== Hàm CRUD ===================
+async function loadRepairs(){
+  resetSession();
+  const tableBody=document.getElementById("repairTable");
+  const searchValue=document.getElementById("search").value.toLowerCase();
+  tableBody.innerHTML="";
 
-    window.onload = loadRepairs;
-  </script>
-
-  <!-- Three.js nền particles nâng cấp -->
-  <script type="module">
-    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js';
-
-    const canvas = document.getElementById('bg');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({canvas, alpha:true});
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    const particlesCount = 3000;
-    const positions = new Float32Array(particlesCount * 3);
-    for (let i = 0; i < particlesCount * 3; i++) {
-      positions[i] = (Math.random() - 0.5) * 200;
-    }
-
-    const particlesGeometry = new THREE.BufferGeometry();
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const particlesMaterial = new THREE.PointsMaterial({ size: 0.5, vertexColors: false });
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
-
-    let hue = 0;
-    camera.position.z = 50;
-
-    function animate() {
-      requestAnimationFrame(animate);
-      hue += 0.2;
-      particlesMaterial.color.setHSL(hue/360, 1, 0.5);
-      particlesMesh.rotation.y += 0.0008;
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('mousemove', (e) => {
-      particlesMesh.rotation.x = (e.clientY / window.innerHeight - 0.5) * 0.5;
-      particlesMesh.rotation.y = (e.clientX / window.innerWidth - 0.5) * 0.5;
+  let repairs=[];
+  if(navigator.onLine){
+    const querySnapshot=await getDocs(collection(db,"repairs"));
+    querySnapshot.forEach(docSnap=>{
+      const data=docSnap.data();
+      data.id=docSnap.id;
+      repairs.push(data);
     });
+  } else {
+    repairs=JSON.parse(localStorage.getItem('repairsOffline')||'[]');
+  }
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+  repairs.forEach(data=>{
+    if(searchValue && !data.bienSo.toLowerCase().includes(searchValue)) return;
+    const trangThai=tinhTrangBaoHanh(data.ngay,data.baoHanh);
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${data.ngay}</td>
+      <td>${data.bienSo}</td>
+      <td>${escapeHtml(data.noiDung)}</td>
+      <td>${data.baoHanh}</td>
+      <td style="color:${trangThai==='Còn bảo hành'?'#0f0':'#f00'}">${trangThai}</td>
+      <td>
+        <button class="actionBtn" data-id="${data.id}" data-noidung="${escapeHtml(data.noiDung)}">✏️ Sửa</button>
+        <button class="actionBtn" data-delete-id="${data.id}">🗑 Xóa</button>
+      </td>
+    `;
+    tableBody.appendChild(tr);
+  });
+
+  document.querySelectorAll("button[data-id]").forEach(btn=>{
+    btn.onclick=()=>secureEdit(btn.dataset.id,btn.dataset.noidung);
+  });
+  document.querySelectorAll("button[data-delete-id]").forEach(btn=>{
+    btn.onclick=()=>secureAction('delete',btn.dataset.deleteId);
+  });
+}
+
+async function addRepair(){
+  resetSession();
+  const ngay=document.getElementById('ngay').value;
+  const bienSo=document.getElementById('bienSo').value;
+  const noiDung=document.getElementById('noiDung').value;
+  const baoHanh=document.getElementById('baoHanh').value;
+  if(!ngay||!bienSo||!noiDung||!baoHanh){alert("Vui lòng nhập đầy đủ thông tin!"); return;}
+  const repair={id:Date.now().toString(),ngay,bienSo,noiDung,baoHanh};
+  if(navigator.onLine) await addDoc(collection(db,"repairs"), repair);
+  else {saveLocalRepair(repair); alert("Bạn đang offline, dữ liệu đã lưu tạm thời.");}
+  loadRepairs();
+}
+
+async function secureEdit(id,currentNoiDung){
+  const pass=prompt("Nhập mật khẩu quản trị để sửa:");
+  if(pass!==ADMIN_PASSWORD){alert("Sai mật khẩu!"); return;}
+  const newNoiDung=prompt("Nhập nội dung sửa chữa mới:",currentNoiDung);
+  if(newNoiDung===null) return;
+  resetSession();
+  if(navigator.onLine){
+    await updateDoc(doc(db,"repairs",id),{noiDung:newNoiDung});
+  } else {
+    let localData=JSON.parse(localStorage.getItem('repairsOffline')||'[]');
+    let found=localData.find(r=>r.id===id);
+    if(found){found.noiDung=newNoiDung; localStorage.setItem('repairsOffline',JSON.stringify(localData)); alert("Bạn đang offline, nội dung sửa đã lưu tạm thời.");}
+  }
+  loadRepairs();
+}
+
+async function deleteRepair(id){
+  resetSession();
+  if(navigator.onLine) await deleteDoc(doc(db,"repairs",id));
+  else {
+    let localData=JSON.parse(localStorage.getItem('repairsOffline')||'[]');
+    localData=localData.filter(r=>r.id!==id);
+    localStorage.setItem('repairsOffline',JSON.stringify(localData));
+    alert("Bạn đang offline, dữ liệu đã xóa tạm thời.");
+  }
+  loadRepairs();
+}
+
+function secureAction(action,id){
+  const pass=prompt("Nhập mật khẩu quản trị:");
+  if(pass===ADMIN_PASSWORD){
+    resetSession();
+    if(action==="add") addRepair();
+    else if(action==="delete") deleteRepair(id);
+  } else alert("Sai mật khẩu!");
+}
+
+async function exportCSV(){
+  resetSession();
+  let repairs=[];
+  if(navigator.onLine){
+    const querySnapshot=await getDocs(collection(db,"repairs"));
+    querySnapshot.forEach(docSnap=>{
+      const d=docSnap.data();
+      repairs.push(d);
     });
-  </script>
+  } else repairs=JSON.parse(localStorage.getItem('repairsOffline')||'[]');
+
+  let csv="Ngày,Biển số,Nội dung,Bảo hành\n";
+  repairs.forEach(d=>{
+    csv+=`${d.ngay},${d.bienSo},${d.noiDung},${d.baoHanh}\n`;
+  });
+  const blob=new Blob([csv],{type:"text/csv"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="data.csv"; a.click();
+}
+
+async function importCSV(event){
+  resetSession();
+  const file=event.target.files[0];
+  if(!file) return;
+  const text=await file.text();
+  const lines=text.split("\n").slice(1);
+  for(let line of lines){
+    if(!line.trim()) continue;
+    const [ngay,bienSo,noiDung,baoHanh]=line.split(",");
+    const repair={id:Date.now().toString(),ngay,bienSo,noiDung,baoHanh};
+    if(navigator.onLine) await addDoc(collection(db,"repairs"), repair);
+    else saveLocalRepair(repair);
+  }
+  loadRepairs();
+}
+
+// =================== Đăng nhập & gán sự kiện ===================
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById("loginBtn").addEventListener("click", ()=>{
+    const pass=document.getElementById("loginPass").value;
+    const msg=document.getElementById("loginMsg");
+    msg.textContent="";
+    if(pass===ADMIN_PASSWORD){
+      document.getElementById("loginScreen").style.display="none";
+      document.getElementById("mainContent").style.display="block";
+      startSession();
+      loadRepairs();
+      if(navigator.onLine) syncLocalRepairs();
+    } else msg.textContent="Sai mật khẩu!";
+  });
+
+  document.getElementById("addBtn").addEventListener("click", ()=>secureAction("add"));
+  document.getElementById("exportBtn").addEventListener("click", exportCSV);
+  document.getElementById("fileInput").addEventListener("change", importCSV);
+  document.getElementById("searchBtn").addEventListener("click", loadRepairs);
+  window.addEventListener('online',()=>{syncLocalRepairs();});
+});
+</script>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js';
+const canvas=document.getElementById('bg');
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight,0.1,1000);
+const renderer=new THREE.WebGLRenderer({canvas,alpha:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+
+const particlesCount=3000;
+const positions=new Float32Array(particlesCount*3);
+for(let i=0;i<particlesCount*3;i++) positions[i]=(Math.random()-0.5)*200;
+const particlesGeometry=new THREE.BufferGeometry();
+particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions,3));
+const particlesMaterial=new THREE.PointsMaterial({size:0.5});
+const particlesMesh=new THREE.Points(particlesGeometry,particlesMaterial);
+scene.add(particlesMesh);
+
+let hue=0; camera.position.z=50;
+function animate(){
+  requestAnimationFrame(animate);
+  hue+=0.2;
+  particlesMaterial.color.setHSL(hue/360,1,0.5);
+  particlesMesh.rotation.y+=0.0008;
+  renderer.render(scene,camera);
+}
+animate();
+
+window.addEventListener('mousemove',(e)=>{
+  particlesMesh.rotation.x=(e.clientY/window.innerHeight-0.5)*0.5;
+  particlesMesh.rotation.y=(e.clientX/window.innerWidth-0.5)*0.5;
+});
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+</script>
+
 </body>
 </html>
